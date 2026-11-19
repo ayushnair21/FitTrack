@@ -47,11 +47,14 @@ function AuthSlider() {
     onSuccess: async (tokenResponse) => {
       setStatus("Verifying with Google...");
       try {
-        const res = await fetch("http://localhost:5000/api/users/google", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token: tokenResponse.access_token }),
-        });
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/users/google`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: tokenResponse.access_token }),
+          },
+        );
 
         const data = await res.json();
 

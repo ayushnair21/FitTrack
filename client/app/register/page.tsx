@@ -16,11 +16,14 @@ function RegisterForm() {
     setStatus("Creating your account...");
 
     try {
-      const res = await fetch("http://localhost:5000/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ firstName, lastName, email, password }),
-      });
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/auth/register`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ firstName, lastName, email, password }),
+        },
+      );
 
       const data = await res.json();
 
@@ -39,11 +42,14 @@ function RegisterForm() {
     onSuccess: async (tokenResponse) => {
       setStatus("Verifying with Google...");
       try {
-        const res = await fetch("http://localhost:5000/api/users/google", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token: tokenResponse.access_token }),
-        });
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/users/google`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: tokenResponse.access_token }),
+          },
+        );
 
         const data = await res.json();
 

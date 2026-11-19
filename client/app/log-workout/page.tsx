@@ -42,17 +42,20 @@ export default function LogWorkout() {
     }));
 
     try {
-      const res = await fetch("http://localhost:5000/api/workouts", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/workouts`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            name: workoutName,
+            exercises: formattedExercises,
+          }),
         },
-        body: JSON.stringify({
-          name: workoutName,
-          exercises: formattedExercises,
-        }),
-      });
+      );
 
       if (res.ok) {
         window.location.href = "/dashboard";

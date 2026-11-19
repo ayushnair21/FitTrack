@@ -37,12 +37,18 @@ export default function Navbar() {
 
     if (token) {
       Promise.all([
-        fetch("http://localhost:5000/api/users/profile", {
-          headers: { Authorization: `Bearer ${token}` },
-        }).then((res) => res.json()),
-        fetch("http://localhost:5000/api/workouts", {
-          headers: { Authorization: `Bearer ${token}` },
-        }).then((res) => res.json()),
+        fetch(
+          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/users/profile`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        ).then((res) => res.json()),
+        fetch(
+          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/workouts`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        ).then((res) => res.json()),
       ])
         .then(([profileData, workoutsData]) => {
           if (profileData.profile?.avatarUrl) {

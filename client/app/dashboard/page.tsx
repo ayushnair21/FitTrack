@@ -55,12 +55,18 @@ export default function Dashboard() {
 
     try {
       const [profileRes, workoutsRes] = await Promise.all([
-        fetch("http://localhost:5000/api/users/profile", {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        fetch("http://localhost:5000/api/workouts", {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
+        fetch(
+          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/users/profile`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        ),
+        fetch(
+          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/workouts`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        ),
       ]);
 
       if (profileRes.ok && workoutsRes.ok) {
@@ -84,20 +90,23 @@ export default function Dashboard() {
     e.preventDefault();
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:5000/api/users/profile", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/users/profile`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            age: Number(onboardingForm.age),
+            height: Number(onboardingForm.height),
+            weight: Number(onboardingForm.weight),
+            goal: onboardingForm.goal,
+            avatarUrl: onboardingForm.avatarUrl,
+          }),
         },
-        body: JSON.stringify({
-          age: Number(onboardingForm.age),
-          height: Number(onboardingForm.height),
-          weight: Number(onboardingForm.weight),
-          goal: onboardingForm.goal,
-          avatarUrl: onboardingForm.avatarUrl,
-        }),
-      });
+      );
       if (res.ok) {
         setShowOnboarding(false);
         fetchDashboardData();
