@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// --- DATABASE TABLES ---
+
+model User {
+  id            String       @id @default(uuid())
+  firstName     String       // NEW: Mandatory first name
+  lastName      String?      // NEW: Optional last name (the ? makes it optional)
+  email         String       @unique
+  password_hash String
+  createdAt     DateTime     @default(now())
+
+  profile       UserProfile?
+  workouts      Workout[]
+}
+
+model UserProfile {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  avatarUrl String?  // NEW: Will hold the image link
+  age       Int?
+  height    Float?
+  weight    Float?
+  goal      String?
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Workout {
+  id        String          @id @default(uuid())
+  userId    String
+  user      User            @relation(fields: [userId], references: [id])
+  name      String
+  date      DateTime        @default(now())
+
+  exercises ExerciseEntry[]
+}
+
+model ExerciseEntry {
+  id        String  @id @default(uuid())
+  workoutId String
+  workout   Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  name      String
+  sets      Int
+  reps      Int
+  weight    Float
+}
