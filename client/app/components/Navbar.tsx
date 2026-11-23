@@ -4,7 +4,7 @@ import { Calendar as CalendarIcon, Moon, Sun, X } from "lucide-react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function Navbar() {
   const { theme, setTheme } = useTheme();
@@ -12,8 +12,11 @@ export default function Navbar() {
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
   const [workouts, setWorkouts] = useState<any[]>([]);
+
+  const avatarMenuRef = useRef<HTMLDivElement | null>(null);
 
   // Calendar State
   const [currentMonth, setCurrentMonth] = useState<Date | null>(null);
@@ -29,7 +32,28 @@ export default function Navbar() {
   }, []);
 
   useEffect(() => {
-    // Set current month safely on client mount
+    setMenuOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent | TouchEvent) => {
+      if (
+        avatarMenuRef.current &&
+        !avatarMenuRef.current.contains(e.target as Node)
+      ) {
+        setMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    document.addEventListener("touchstart", handleOutsideClick);
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener("touchstart", handleOutsideClick);
+    };
+  }, []);
+
+  useEffect(() => {
     setCurrentMonth(new Date());
 
     const token = localStorage.getItem("token");
@@ -113,10 +137,10 @@ export default function Navbar() {
   return (
     <>
       <nav className="fixed top-0 w-full z-50 bg-white/40 backdrop-blur-md border-b border-white/50 text-gray-900 shadow-sm dark:bg-[#050505]/60 dark:backdrop-blur-lg dark:border-white/10 dark:text-white transition-colors duration-300">
-        <div className="max-w-6xl mx-auto px-8 py-4 flex justify-between items-center">
+        <div className="max-w-6xl mx-auto px-4 sm:px-8 py-4 flex justify-between items-center">
           <Link
             href={isLoggedIn ? "/dashboard" : "/"}
-            className="group flex items-center gap-2.5 select-none"
+            className="group flex items-center gap-2.5 select-none shrink-0"
           >
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#3A0CA3] text-white shadow-md shadow-[#3A0CA3]/30 transition-transform duration-300 group-hover:scale-105">
               <svg
@@ -140,10 +164,11 @@ export default function Navbar() {
             </span>
           </Link>
 
-          <div className="flex items-center gap-6 font-medium text-sm relative">
+          <div className="flex items-center gap-3 sm:gap-6 font-medium text-sm relative">
             {/* --- THEME TOGGLE BUTTON --- */}
             {mounted && (
               <button
+                type="button"
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
                 className="text-gray-700 hover:text-[#3A0CA3] dark:text-gray-300 dark:hover:text-[#9b7bff] transition p-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10"
                 title="Toggle Theme"
@@ -166,6 +191,7 @@ export default function Navbar() {
                 </Link>
 
                 <button
+                  type="button"
                   onClick={() => {
                     setShowCalendar(true);
                     setSelectedDateWorkouts(null);
@@ -176,8 +202,14 @@ export default function Navbar() {
                   <CalendarIcon className="w-6 h-6" />
                 </button>
 
-                <div className="relative group py-2">
-                  <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center cursor-pointer hover:opacity-80 transition border border-gray-300 dark:border-gray-500 overflow-hidden">
+                <div ref={avatarMenuRef} className="relative">
+                  <button
+                    type="button"
+                    aria-expanded={menuOpen}
+                    aria-label="Open profile menu"
+                    onClick={() => setMenuOpen((prev) => !prev)}
+                    className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center cursor-pointer hover:opacity-80 active:scale-95 transition border border-gray-300 dark:border-gray-500 overflow-hidden"
+                  >
                     {avatarUrl ? (
                       <img
                         src={avatarUrl}
@@ -189,22 +221,26 @@ export default function Navbar() {
                         U
                       </span>
                     )}
-                  </div>
+                  </button>
 
-                  <div className="absolute right-0 top-12 mt-1 w-48 bg-white/90 backdrop-blur-md rounded-md shadow-xl hidden group-hover:block border border-gray-200 z-50 overflow-hidden text-black dark:bg-gray-800/90 dark:border-gray-700 dark:text-white">
-                    <Link
-                      href="/profile"
-                      className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 border-b border-gray-100 dark:text-gray-200 dark:hover:bg-gray-700 dark:border-gray-700 transition"
-                    >
-                      Profile View
-                    </Link>
-                    <button
-                      onClick={handleLogout}
-                      className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 font-medium dark:text-red-400 dark:hover:bg-gray-700 transition"
-                    >
-                      Log Out
-                    </button>
-                  </div>
+                  {menuOpen && (
+                    <div className="absolute right-0 top-12 mt-1 w-48 bg-white/95 backdrop-blur-md rounded-md shadow-xl border border-gray-200 z-50 overflow-hidden text-black dark:bg-gray-800/95 dark:border-gray-700 dark:text-white">
+                      <Link
+                        href="/profile"
+                        onClick={() => setMenuOpen(false)}
+                        className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 border-b border-gray-100 dark:text-gray-200 dark:hover:bg-gray-700 dark:border-gray-700 transition"
+                      >
+                        Profile View
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={handleLogout}
+                        className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 font-medium dark:text-red-400 dark:hover:bg-gray-700 transition"
+                      >
+                        Log Out
+                      </button>
+                    </div>
+                  )}
                 </div>
               </>
             ) : pathname !== "/login" ? (
@@ -232,6 +268,7 @@ export default function Navbar() {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 text-black dark:text-white">
           <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-md rounded-xl shadow-2xl p-6 max-w-md w-full relative max-h-[90vh] overflow-y-auto border border-white/20 dark:border-gray-800">
             <button
+              type="button"
               onClick={() => setShowCalendar(false)}
               className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition"
             >
@@ -241,6 +278,7 @@ export default function Navbar() {
             {selectedDateWorkouts ? (
               <div>
                 <button
+                  type="button"
                   onClick={() => setSelectedDateWorkouts(null)}
                   className="text-xs font-bold text-[#3A0CA3] dark:text-[#9b7bff] hover:underline mb-4 block transition"
                 >
@@ -295,6 +333,7 @@ export default function Navbar() {
                   </h3>
                   <div className="flex gap-2">
                     <button
+                      type="button"
                       onClick={() =>
                         setCurrentMonth(new Date(year, month - 1, 1))
                       }
@@ -303,6 +342,7 @@ export default function Navbar() {
                       &larr;
                     </button>
                     <button
+                      type="button"
                       onClick={() =>
                         setCurrentMonth(new Date(year, month + 1, 1))
                       }
@@ -336,6 +376,7 @@ export default function Navbar() {
 
                     return (
                       <button
+                        type="button"
                         key={day}
                         onClick={() => handleDayClick(day)}
                         className={`h-10 rounded-lg flex flex-col items-center justify-center text-sm font-semibold transition relative ${
