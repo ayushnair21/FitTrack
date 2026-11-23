@@ -79,7 +79,7 @@ app.post("/api/auth/register", async (req, res) => {
     });
 
     const token = jwt.sign({ userId: newUser.id }, process.env.JWT_SECRET, {
-      expiresIn: "7d",
+      expiresIn: "1h",
     });
 
     res.status(201).json({ message: "User registered", token });
@@ -105,7 +105,7 @@ app.post("/api/users/login", async (req, res) => {
     }
 
     const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
-      expiresIn: "7d",
+      expiresIn: "1h",
     });
 
     res.json({
@@ -161,7 +161,7 @@ app.post("/api/users/google", async (req, res) => {
 
     // 4. Generate custom JWT
     const authToken = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
-      expiresIn: "7d",
+      expiresIn: "1h",
     });
 
     res.status(200).json({

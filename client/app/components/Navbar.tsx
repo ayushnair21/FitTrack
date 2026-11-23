@@ -6,6 +6,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
+const IDLE_TIMEOUT_MS = 60 * 60 * 1000; // 1 hour
+
 export default function Navbar() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -53,6 +55,82 @@ export default function Navbar() {
     };
   }, []);
 
+  // Auto-logout after 1 hour of inactivity or when returning after >1 hour
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    const forceLogout = () => {
+      localStorage.removeItem("token");
+      localStorage.removeItem("lastActiveAt");
+      setIsLoggedIn(false);
+      setAvatarUrl(null);
+      window.location.href = "/login?expired=true";
+    };
+
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      if (payload.exp && payload.exp * 1000 < Date.now()) {
+        forceLogout();
+        return;
+      }
+    } catch {
+      forceLogout();
+      return;
+    }
+
+    const storedLastActive = localStorage.getItem("lastActiveAt");
+    if (storedLastActive) {
+      const elapsed = Date.now() - Number(storedLastActive);
+      if (elapsed > IDLE_TIMEOUT_MS) {
+        forceLogout();
+        return;
+      }
+    }
+
+    let idleTimer: ReturnType<typeof setTimeout>;
+
+    const resetIdleTimer = () => {
+      localStorage.setItem("lastActiveAt", String(Date.now()));
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(forceLogout, IDLE_TIMEOUT_MS);
+    };
+
+    resetIdleTimer();
+
+    const activityEvents = [
+      "mousemove",
+      "mousedown",
+      "keydown",
+      "touchstart",
+      "scroll",
+    ];
+    activityEvents.forEach((event) =>
+      window.addEventListener(event, resetIdleTimer, { passive: true }),
+    );
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        const lastActive = Number(
+          localStorage.getItem("lastActiveAt") || Date.now(),
+        );
+        if (Date.now() - lastActive > IDLE_TIMEOUT_MS) {
+          forceLogout();
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearTimeout(idleTimer);
+      activityEvents.forEach((event) =>
+        window.removeEventListener(event, resetIdleTimer),
+      );
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [pathname]);
+
   useEffect(() => {
     setCurrentMonth(new Date());
 
@@ -90,6 +168,7 @@ export default function Navbar() {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("lastActiveAt");
     window.location.href = "/login";
   };
 

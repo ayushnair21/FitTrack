@@ -2,7 +2,12 @@
 
 import { GoogleOAuthProvider, useGoogleLogin } from "@react-oauth/google";
 import Link from "next/link";
-import { useState, type FormEvent, type InputHTMLAttributes } from "react";
+import {
+  useEffect,
+  useState,
+  type FormEvent,
+  type InputHTMLAttributes,
+} from "react";
 
 function AuthSlider() {
   const [isLogin, setIsLogin] = useState(true);
@@ -13,6 +18,13 @@ function AuthSlider() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [status, setStatus] = useState("");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("expired") === "true") {
+      setStatus("Session expired due to inactivity. Please log in again.");
+    }
+  }, []);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -37,6 +49,7 @@ function AuthSlider() {
 
       if (res.ok) {
         localStorage.setItem("token", data.token);
+        localStorage.setItem("lastActiveAt", String(Date.now()));
         window.location.href = "/dashboard";
       } else {
         setStatus(data.error || "Authentication failed.");
@@ -63,6 +76,7 @@ function AuthSlider() {
 
         if (res.ok) {
           localStorage.setItem("token", data.token);
+          localStorage.setItem("lastActiveAt", String(Date.now()));
           window.location.href = "/dashboard";
         } else {
           setStatus(data.error || "Google login failed.");
